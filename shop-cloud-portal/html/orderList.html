@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE">
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <title>订单页</title>
+    <link rel="stylesheet" type="text/css" href="../js/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="../js/shop/css/webbase.css" />
+    <link rel="stylesheet" type="text/css" href="../js/shop/css/pages-getOrderInfo.css" />
+</head>
+<body>
+
+<table id="Table" class="table table-striped table-bordered" style="width:100%">
+    <thead>
+        <tr>
+
+            <td>订单编号</td>
+            <td>创建时间</td>
+            <td>金额</td>
+            <td>订单状态</td>
+            <td>收件人</td>
+            <td>地址</td>
+            <td>电话</td>
+            <td>操作</td>
+        </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+</table>
+
+<script type="text/javascript" src="../js/shop/js/plugins/jquery/jquery.min.js"></script>
+<script src="../js/bootstrap/js/bootstrap.min.js"></script>
+<script src="../js/jquery.cookie.min.js"></script>
+<script src="../js/common.js"></script>
+<script type="text/javascript" src="../js/bootbox/bootbox.min.js"></script>
+<script type="text/javascript" src="../js/bootbox/bootbox.locales.min.js"></script>
+</body>
+<script>
+
+    $(function () {
+        initOrder();
+    })
+
+    function initOrder() {
+        $.ajax({
+            type:"get",
+            url:""+url+"/orders/findList",
+            beforeSend: function(xhr) {
+                var v_token = $.cookie(TOKEN);
+                xhr.setRequestHeader(AUTH, v_token);
+            },
+            success:function (res) {
+                var orderVoList = res.data;
+                if(res.code==200){
+                    var html = '';
+                    for (let orderVo of orderVoList) {
+                        var  status = orderVo.status;
+                        if(status == 0){
+                            status = "未支付";
+                        }else if(status == 10){
+                            status = "交易支付成功";
+                        }else if(status == 40){
+                            status = "交易关闭";
+                        }
+
+                       // console.log(orderVo.id)
+                        html+='<tr>';
+                        html+='<td>'+orderVo.id+'</td>';
+                        html+='<td>'+orderVo.createTime+'</td>';
+                        html+='<td style="color: #9d261d; font-weight: bold">￥'+orderVo.totalPrice+'</td>';
+                        html+='<td>'+status+'</td>';
+                        html+='<td>'+orderVo.recipientName+'</td>';
+                        html+='<td>'+orderVo.recipientAddr+'</td>';
+                        html+='<td>'+orderVo.recipientPhone+'</td>';
+                        html+='<td><a href="#" onclick="cancelOrder(\''+orderVo.id+'\')">取消订单</a>/<a href="#" onclick="payOrder(\''+orderVo.id+'\')">支付订单</a></td>';
+                        html+='</tr>';
+                    }
+                    $("#Table tbody").html(html);
+                }else if(res.code==7000 || res.code==7002 ||res.code==7001){
+                    location.href = "login.html";
+                }else{
+                    alert("@@@@@@@@@@@@");
+                }
+            }
+        })
+    }
+
+    function payOrder(id) {
+        $.ajax({
+            type:"post",
+            url:""+url+"/pays/aliPay/",
+         //   data:{"id":id},
+            data:{"orderId":id},
+            beforeSend: function(xhr){
+                var v_token = $.cookie(TOKEN);
+                xhr.setRequestHeader(AUTH, v_token);
+            },
+            success:function (res) {
+                if(res.code==200){
+                    $("body").html(res.data)
+                }else{
+                    alert("++++++++++")
+                }
+            }
+        })
+    }
+
+    function cancelOrder(id) {
+        // console.log(id)
+        $.ajax({
+            type:"post",
+            url:""+url+"orders/closeOrder/" +id,
+            beforeSend: function(xhr){
+                var v_token = $.cookie(TOKEN);
+                xhr.setRequestHeader(AUTH, v_token);
+            },
+            success:function (res) {
+                if(res.code==200){
+                    initOrder();
+                }else{
+                    alert("..........")
+                }
+            }
+        })
+    }
+
+</script>
+</html>
